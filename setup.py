@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='entsoe-py',
+    name='tennetConnector',
     version='0.1',
     description='A python API wrapper for TenneT',
 
