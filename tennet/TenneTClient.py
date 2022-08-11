@@ -3,10 +3,26 @@ from tennet.helpers.DataQueries import DataQueries
 
 
 def data_looper(func, start, end):
+    def assign_date_column(df):
+
+        def assign_datetime_column(df):
+            if 'PERIOD_UNTIL' in df.columns:
+                df['DATETIME'] = pd.to_datetime(df.DATE.astype(str) + ' ' + df.PERIOD_UNTIL)
+            else:
+                df['HOUR'] = df.PTU // 4
+                df['MINUTE'] = df.PTU % 4 * 15
+                df['DATETIME'] = pd.to_datetime(
+                    df.DATE.astype(str) + ' ' + df.HOUR.astype(str) + ':' + df.MINUTE.astype(str))
+                df.drop(columns=['HOUR', 'MINUTE'])
+            return df.set_index("DATETIME")
+
+        df.DATE = pd.to_datetime(df.DATE)
+        return assign_datetime_column(df)
+
     data_list = list()
     for date in pd.date_range(start, end):
         data_list.append(func(date))
-    return pd.concat(data_list)
+    return assign_date_column(pd.concat(data_list))
 
 
 class TenneTClient:
@@ -33,4 +49,3 @@ class TenneTClient:
 
     def obtain_settlement_prices(self, start_date: pd.Timestamp, end_date: pd.Timestamp) -> pd.DataFrame:
         return data_looper(func=self.DQ.query_available_afrr_capacity, start=start_date, end=end_date)
-
