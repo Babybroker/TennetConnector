@@ -3,24 +3,30 @@ import pandas as pd
 
 
 def parse_data(response) -> pd.DataFrame:
-    return pd.read_xml(response.content)
+    return pd.read_xml(response.content, xpath='.//Record')
 
 
 def prepare_date_format(date):
     return date.date().strftime("%Y%m%d")
 
 
-class DataQueries:
-    def __init__(self):
-        self.base_url = 'https://www.tennet.org/xml/'
+class DataQuery:
+    def __init__(self, base_url):
+        self.base_url = base_url
 
-    def api_call(self, url_addition):
+    def _api_call(self, url_addition):
         response = requests.get(self.base_url + url_addition)
         response.raise_for_status()
         return response
 
     def obtain_data_from_website(self, url_addition) -> pd.DataFrame:
-        return parse_data(self.api_call(url_addition))
+        return parse_data(self._api_call(url_addition))
+
+
+class DataQueriesXml(DataQuery):
+    def __init__(self):
+        super().__init__('https://www.tennet.org/xml/')
+
 
     def query_actual_balance(self) -> pd.DataFrame:
         return self.obtain_data_from_website('balancedeltaprices/balans-delta.xml')
@@ -42,3 +48,4 @@ class DataQueries:
 
     def query_settlement_prices(self, date: pd.Timestamp) -> pd.DataFrame:
         return self.obtain_data_from_website(f'imbalanceprice/{prepare_date_format(date)}.xml')
+

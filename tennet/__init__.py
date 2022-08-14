@@ -1,1 +1,1 @@
-from tennet.TenneTClient import TenneTClient
+from tennet.TenneTClient import TenneTClientMain, TenneTClientXMLWebsite
