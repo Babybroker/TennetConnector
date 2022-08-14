@@ -10,6 +10,22 @@ def prepare_date_format(date):
     return date.date().strftime("%d-%m-%Y")
 
 
+def assign_date_column(df):
+    def assign_datetime_column(df):
+        if 'PERIOD_UNTIL' in df.columns:
+            df['DATETIME'] = pd.to_datetime(df.DATE.astype(str) + ' ' + df.PERIOD_UNTIL)
+        else:
+            df['HOUR'] = df.PTU // 4
+            df['MINUTE'] = df.PTU % 4 * 15
+            df['DATETIME'] = pd.to_datetime(
+                df.DATE.astype(str) + ' ' + df.HOUR.astype(str) + ':' + df.MINUTE.astype(str))
+            df.drop(columns=['HOUR', 'MINUTE'])
+        return df.set_index("DATETIME")
+
+    df.DATE = pd.to_datetime(df.DATE)
+    return assign_datetime_column(df)
+
+
 class TenneTClient:
 
     def __init__(self):
@@ -21,7 +37,7 @@ class TenneTClient:
         return response
 
     def _obtain_data_from_website(self, url) -> pd.DataFrame:
-        return parse_data(self._api_call(self.base_url + url))
+        return assign_date_column(parse_data(self._api_call(self.base_url + url)))
 
     def _uri_addition(self, export_type, start_date, end_date):
         return f'exporttype={export_type}&' \

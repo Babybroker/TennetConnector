@@ -27,7 +27,6 @@ class DataQueriesXml(DataQuery):
     def __init__(self):
         super().__init__('https://www.tennet.org/xml/')
 
-
     def query_actual_balance(self) -> pd.DataFrame:
         return self.obtain_data_from_website('balancedeltaprices/balans-delta.xml')
 
