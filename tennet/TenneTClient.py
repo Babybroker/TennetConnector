@@ -188,5 +188,5 @@ class TenneTClient:
         response = self._api_call('https://www.tennet.org/xml/balancedeltaprices/balans-delta.xml')
         df = pd.read_xml(response.content)
         df['DATETIME'] = pd.to_datetime(datetime.today().date().strftime('%Y-%m-%d') + ' ' +  df.TIME)
-        return df
+        return df.set_index('DATETIME')
 
