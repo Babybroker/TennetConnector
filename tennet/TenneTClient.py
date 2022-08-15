@@ -15,8 +15,8 @@ def assign_date_column(df):
         if 'PERIOD_UNTIL' in df.columns:
             df['DATETIME'] = pd.to_datetime(df.DATE.astype(str) + ' ' + df.PERIOD_UNTIL)
         else:
-            df['HOUR'] = df.PTU // 4
-            df['MINUTE'] = df.PTU % 4 * 15
+            df['HOUR'] = (df.PTU-1) // 4
+            df['MINUTE'] = (df.PTU-1) % 4 * 15
             df['DATETIME'] = pd.to_datetime(
                 df.DATE.astype(str) + ' ' + df.HOUR.astype(str) + ':' + df.MINUTE.astype(str))
             df.drop(columns=['HOUR', 'MINUTE'])
