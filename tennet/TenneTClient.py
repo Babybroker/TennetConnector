@@ -14,12 +14,12 @@ def assign_date_column(df):
     def assign_datetime_column(df):
         until_cols = [col for col in df.columns if 'PERIOD_UNTIL' in col]
         if len(until_cols) == 1:
-            df['DATETIME'] = pd.to_datetime(df.DATE.astype(str) + ' ' + df[until_cols[0]])
+            df['DATETIME'] = pd.to_datetime(df.DATE.astype(str) + ' ' + df[until_cols[0]]).tz_localize('CET')
         else:
             df['HOUR'] = (df.PTU-1) // 4
             df['MINUTE'] = (df.PTU-1) % 4 * 15
             df['DATETIME'] = pd.to_datetime(
-                df.DATE.astype(str) + ' ' + df.HOUR.astype(str) + ':' + df.MINUTE.astype(str))
+                df.DATE.astype(str) + ' ' + df.HOUR.astype(str) + ':' + df.MINUTE.astype(str)).tz_localize('CET')
             df.drop(columns=['HOUR', 'MINUTE'])
         return df.set_index("DATETIME")
 
