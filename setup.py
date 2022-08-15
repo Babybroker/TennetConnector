@@ -2,7 +2,9 @@ from setuptools import setup, find_packages
 
 setup(
     name='tennetConnector',
-    version='0.3.5',
+
+    version='0.3.2',
+
     description='A python API wrapper for TenneT',
 
     # url='https://github.com/EnergieID/entsoe-py',
