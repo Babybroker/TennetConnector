@@ -192,6 +192,6 @@ class TenneTClient:
         """ Obtain the actual imbalance with a delay of 2 minutes"""
         response = self._api_call('https://www.tennet.org/xml/balancedeltaprices/balans-delta.xml')
         df = pd.read_xml(response.content)
-        df['DATETIME'] = pd.to_datetime(datetime.today().date().strftime('%Y-%m-%d') + ' ' +  df.TIME)
+        df['DATETIME'] = pd.to_datetime(datetime.today().date().strftime('%Y-%m-%d') + ' ' +  df.TIME).dt.tz_localize('CET', ambiguous='infer', nonexistent='shift_forward')
         return df.set_index('DATETIME')
 
