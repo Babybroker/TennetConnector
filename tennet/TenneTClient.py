@@ -13,8 +13,11 @@ def prepare_date_format(date):
 def assign_date_column(df):
     def assign_datetime_column(df):
         until_cols = [col for col in df.columns if 'PERIOD_UNTIL' in col]
+        time_col = [col for col in df.columns if 'TIME' in col]
         if len(until_cols) == 1:
             df['DATETIME'] = pd.to_datetime(df.DATE.astype(str) + ' ' + df[until_cols[0]])
+        elif time_col == 1:
+            df['DATETIME'] = pd.to_datetime(df.DATE.astype(str) + ' ' + df[time_col[0]])
         else:
             df['HOUR'] = df.PTU // 4
             df['MINUTE'] = df.PTU % 4 * 15
