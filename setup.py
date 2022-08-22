@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(
     name='tennetConnector',
 
-    version='0.3.3',
+    version='0.3.4',
 
     description='A python API wrapper for TenneT',
 
