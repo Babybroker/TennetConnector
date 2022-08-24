@@ -52,7 +52,7 @@ class TenneTClient:
             for i in range(len(dates)):
                 i -= 1
                 start_d = start_date if i == -1 else dates[i]
-                end_d = dates[i] if i == -1 else dates[i + 1]
+                end_d = dates[0] if i == -1 else dates[i + 1]
                 data_list.append(self._obtain_data_from_website(self._uri_addition(export_type, start_d, end_d)))
 
             data_list.append(self._obtain_data_from_website(self._uri_addition(export_type, dates[-1], end_date)))
