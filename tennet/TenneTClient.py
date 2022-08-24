@@ -48,14 +48,16 @@ class TenneTClient:
     def _monthly_data_call(self, export_type, start_date, end_date):
         dates = pd.date_range(start_date, end_date, freq='m')
         data_list = list()
-        for i in range(len(dates)):
-            i -= 1
-            start_d = start_date if i == -1 else dates[i]
-            end_d = dates[i] if i == -1 else dates[i + 1]
-            data_list.append(self._obtain_data_from_website(self._uri_addition(export_type, start_d, end_d)))
+        if len(dates)>0:
+            for i in range(len(dates)):
+                i -= 1
+                start_d = start_date if i == -1 else dates[i]
+                end_d = dates[i] if i == -1 else dates[i + 1]
+                data_list.append(self._obtain_data_from_website(self._uri_addition(export_type, start_d, end_d)))
 
-        data_list.append(self._obtain_data_from_website(self._uri_addition(export_type, dates[-1], end_date)))
-
+            data_list.append(self._obtain_data_from_website(self._uri_addition(export_type, dates[-1], end_date)))
+        else:
+            data_list.append(self._obtain_data_from_website(self._uri_addition(export_type, start_date, end_date)))
         return assign_date_column(pd.concat(data_list))
 
     def _obtain_data_from_website(self, url) -> pd.DataFrame:
