@@ -1,5 +1,3 @@
-import time
-
 import requests
 import pandas as pd
 from datetime import datetime
@@ -51,13 +49,10 @@ class TenneTClient:
         dates = pd.date_range(start_date, end_date, freq='m')
         data_list = list()
         for i in range(len(dates)):
-            i -=1
-            start_t = time.time()
+            i -= 1
             start_d = start_date if i == -1 else dates[i]
-            end_d = dates[i] if i ==-1 else dates[i+1]
-
+            end_d = dates[i] if i == -1 else dates[i + 1]
             data_list.append(self._obtain_data_from_website(self._uri_addition(export_type, start_d, end_d)))
-            print((time.time()-start_t)/60)
 
         data_list.append(self._obtain_data_from_website(self._uri_addition(export_type, dates[-1], end_date)))
 
@@ -214,6 +209,6 @@ class TenneTClient:
         """ Obtain the actual imbalance with a delay of 2 minutes"""
         response = self._api_call('https://www.tennet.org/xml/balancedeltaprices/balans-delta.xml')
         df = pd.read_xml(response.content)
-        df['DATETIME'] = pd.to_datetime(datetime.today().date().strftime('%Y-%m-%d') + ' ' +  df.TIME).dt.tz_localize('CET', ambiguous='infer', nonexistent='shift_forward')
+        df['DATETIME'] = pd.to_datetime(datetime.today().date().strftime('%Y-%m-%d') + ' ' + df.TIME).dt.tz_localize(
+            'CET', ambiguous='infer', nonexistent='shift_forward')
         return df.set_index('DATETIME')
-
