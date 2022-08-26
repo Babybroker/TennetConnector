@@ -19,6 +19,8 @@ def assign_date_column(df):
             df['DATETIME'] = pd.to_datetime(df.DATE.astype(str) + ' ' + df[until_cols[0]])
         elif len(time_col) == 1:
             df['DATETIME'] = pd.to_datetime(df.DATE.astype(str) + ' ' + df[time_col[0]])
+        elif 'SEQ_NR' in  df.columns:
+            df['DATETIME'] = pd.to_datetime(df.DATE.astype(str) + ' ' + df['SEQ_NR'] + ':00')
         else:
             df['HOUR'] = df.PTU // 4
             df['MINUTE'] = df.PTU % 4 * 15
