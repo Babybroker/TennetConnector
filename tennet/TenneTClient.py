@@ -13,14 +13,14 @@ def prepare_date_format(date):
 
 def assign_date_column(df):
     def assign_datetime_column(df):
-        until_cols = [col for col in df.columns if 'PERIOD_UNTIL' in col or 'PERIODE_TM' in col]
+        from_cols = [col for col in df.columns if 'PERIOD_FROM' in col or 'PERIODE_VAN' in col]
         time_col = [col for col in df.columns if 'TIME' in col]
-        if len(until_cols) == 1:
-            df['DATETIME'] = pd.to_datetime(df.DATE.astype(str) + ' ' + df[until_cols[0]])
+        if len(from_cols) == 1:
+            df['DATETIME'] = pd.to_datetime(df.DATE.astype(str) + ' ' + df[from_cols[0]])
         elif len(time_col) == 1:
             df['DATETIME'] = pd.to_datetime(df.DATE.astype(str) + ' ' + df[time_col[0]])
-        elif 'SEQ_NR' in  df.columns:
-            df['DATETIME'] = pd.to_datetime(df.DATE.astype(str) + ' ' + df['SEQ_NR'] + ':00')
+        elif 'SEQ_NR' in df.columns:
+            df['DATETIME'] = pd.to_datetime(df.DATE.astype(str) + ' ' + (df['SEQ_NR'] - 1).astype(str) + ':00')
         else:
             df['HOUR'] = df.PTU // 4
             df['MINUTE'] = df.PTU % 4 * 15
@@ -28,9 +28,9 @@ def assign_date_column(df):
             df['DATETIME'] = pd.to_datetime(
                 df.DATE.astype(str) + ' ' + df.HOUR.astype(str) + ':' + df.MINUTE.astype(str))
             df.drop(columns=['HOUR', 'MINUTE'])
-        df.DATETIME = df.DATETIME.dt.tz_localize('CET', ambiguous='infer', nonexistent='shift_forward')
-        df.DATETIME = df.DATETIME.mask((df.DATETIME.dt.hour == 0) & (df.DATETIME.dt.minute == 0),
-                                       df.DATETIME + pd.Timedelta(days=1))
+        df.DATETIME = df.DATETIME.dt.tz_localize('CET', ambiguous='NaT', nonexistent='shift_forward')
+        # df.DATETIME = df.DATETIME.mask((df.DATETIME.dt.hour == 0) & (df.DATETIME.dt.minute == 0),
+        #                                df.DATETIME + pd.Timedelta(days=1))
         return df.set_index("DATETIME")
 
     df.DATE = pd.to_datetime(df.DATE)
