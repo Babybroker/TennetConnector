@@ -16,11 +16,12 @@ def assign_date_column(df):
         from_cols = [col for col in df.columns if 'PERIOD_FROM' in col or 'PERIODE_VAN' in col]
         time_col = [col for col in df.columns if 'TIME' in col]
         if len(from_cols) == 1:
-            df['DATETIME'] = pd.to_datetime(df.DATE.astype(str) + ' ' + df[from_cols[0]])
+            df['DATETIME'] = pd.to_datetime(df.DATE.astype(str) + ' ' + df[from_cols[0]], format='%Y-%m-%d %H:%M')
         elif len(time_col) == 1:
-            df['DATETIME'] = pd.to_datetime(df.DATE.astype(str) + ' ' + df[time_col[0]])
+            df['DATETIME'] = pd.to_datetime(df.DATE.astype(str) + ' ' + df[time_col[0]], format='%Y-%m-%d %H:%M')
         elif 'SEQ_NR' in df.columns:
-            df['DATETIME'] = pd.to_datetime(df.DATE.astype(str) + ' ' + (df['SEQ_NR'] - 1).astype(str) + ':00')
+            df['DATETIME'] = pd.to_datetime(df.DATE.astype(str) + ' ' + (df['SEQ_NR'] - 1).astype(str) + ':00',
+                                            format='%Y-%m-%d %H:%M')
         else:
             df['HOUR'] = df.PTU // 4
             df['MINUTE'] = df.PTU % 4 * 15
