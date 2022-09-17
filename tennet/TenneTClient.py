@@ -3,75 +3,96 @@ import pandas as pd
 from datetime import datetime
 
 
-def parse_data(response) -> pd.DataFrame:
-    return pd.read_xml(response.content, xpath='.//Record')
-
-
-def prepare_date_format(date):
-    return date.date().strftime("%d-%m-%Y")
-
-
-def assign_date_column(df):
-    def assign_datetime_column(df):
-        from_cols = [col for col in df.columns if 'PERIOD_FROM' in col or 'PERIODE_VAN' in col]
-        time_col = [col for col in df.columns if 'TIME' in col]
-        if len(from_cols) == 1:
-            df['DATETIME'] = pd.to_datetime(df.DATE.astype(str) + ' ' + df[from_cols[0]], format='%Y-%m-%d %H:%M')
-        elif len(time_col) == 1:
-            df['DATETIME'] = pd.to_datetime(df.DATE.astype(str) + ' ' + df[time_col[0]], format='%Y-%m-%d %H:%M')
-        elif 'SEQ_NR' in df.columns:
-            df['DATETIME'] = pd.to_datetime(df.DATE.astype(str) + ' ' + (df['SEQ_NR'] - 1).astype(str) + ':00',
-                                            format='%Y-%m-%d %H:%M')
-        else:
-            df['HOUR'] = df.PTU // 4
-            df['MINUTE'] = df.PTU % 4 * 15
-            df.HOUR = df.HOUR.replace(24, 0)
-            df['DATETIME'] = pd.to_datetime(
-                df.DATE.astype(str) + ' ' + df.HOUR.astype(str) + ':' + df.MINUTE.astype(str))
-            df.drop(columns=['HOUR', 'MINUTE'])
-        df.DATETIME = df.DATETIME.dt.tz_localize('CET', ambiguous='NaT', nonexistent='shift_forward')
-        # df.DATETIME = df.DATETIME.mask((df.DATETIME.dt.hour == 0) & (df.DATETIME.dt.minute == 0),
-        #                                df.DATETIME + pd.Timedelta(days=1))
-        return df.set_index("DATETIME")
-
-    df.DATE = pd.to_datetime(df.DATE)
-    return assign_datetime_column(df)
-
-
 class TenneTClient:
-
     def __init__(self):
         self.base_url = 'http://www.tennet.org/english/operational_management/export_data.aspx?'
 
-    def _api_call(self, url_addition):
-        response = requests.get(url_addition)
+    @staticmethod
+    def parse_data(response) -> pd.DataFrame:
+        """ Deal with the XML-files from TenneT"""
+        return pd.read_xml(response.content, xpath='.//Record')
+
+    @staticmethod
+    def prepare_date_format(date):
+        """ Date format used by Tennet"""
+        return date.date().strftime("%d-%m-%Y")
+
+    @staticmethod
+    def assign_date_column(df: pd.DataFrame) -> pd.DataFrame:
+        """ Create a datetime column based on the information found in the columns """
+
+        def assign_datetime_column(df: pd.DataFrame) -> pd.DataFrame:
+            from_cols = [col for col in df.columns if 'PERIOD_FROM' in col or 'PERIODE_VAN' in col]
+            time_col = [col for col in df.columns if 'TIME' in col]
+            if len(from_cols) == 1:
+                # If Period_from can be found in the columns, we will use that one first.
+                df['DATETIME'] = pd.to_datetime(df.DATE.astype(str) + ' ' + df[from_cols[0]], format='%Y-%m-%d %H:%M')
+            elif len(time_col) == 1:
+                # Otherwise look for a column that is called Time
+                df['DATETIME'] = pd.to_datetime(df.DATE.astype(str) + ' ' + df[time_col[0]], format='%Y-%m-%d %H:%M')
+            elif 'SEQ_NR' in df.columns:
+                # Or use the SEQ_NR column.
+                df['DATETIME'] = pd.to_datetime(df.DATE.astype(str) + ' ' + (df['SEQ_NR'] - 1).astype(str) + ':00',
+                                                format='%Y-%m-%d %H:%M')
+            else:
+                # Worst case scenario, we need to derive the hour from the PTU column
+                # TODO: deal with DST whereby the max PTU > 96
+                df['HOUR'] = df.PTU // 4
+                df['MINUTE'] = df.PTU % 4 * 15
+                df.HOUR = df.HOUR.replace(24, 0)
+                df['DATETIME'] = pd.to_datetime(
+                    df.DATE.astype(str) + ' ' + df.HOUR.astype(str) + ':' + df.MINUTE.astype(str))
+                df.drop(columns=['HOUR', 'MINUTE'])
+            df.DATETIME = df.DATETIME.dt.tz_localize('CET', ambiguous='NaT', nonexistent='shift_forward')
+
+            return df.set_index("DATETIME")
+
+        df.DATE = pd.to_datetime(df.DATE)
+        return assign_datetime_column(df)
+
+    def _api_call(self, params: dict) -> requests.Response:
+        """ Call the TenneT API"""
+        response = requests.get(self.base_url, params=params)
         response.raise_for_status()
         return response
 
-    def _monthly_data_call(self, export_type, start_date, end_date):
+    def _monthly_data_call(self, export_type: str, start_date: pd.Timestamp, end_date: pd.Timestamp) -> pd.DataFrame:
+        """
+        Split the data query into multiple calls to prevent that the API takes too long for a response.
+        :param export_type: Type of datafile to export
+        :param start_date: First date to query
+        :param end_date: Latest date to query
+        :return:
+        """
+        params = dict(
+            exporttype=export_type,
+            format='xml',
+            submit='1'
+        )
+
         dates = pd.date_range(start_date, end_date, freq='m')
         data_list = list()
-        if len(dates)>0:
+        if len(dates) > 0:
             for i in range(len(dates)):
                 i -= 1
                 start_d = start_date if i == -1 else dates[i]
                 end_d = dates[0] if i == -1 else dates[i + 1]
-                data_list.append(self._obtain_data_from_website(self._uri_addition(export_type, start_d, end_d)))
+                params['datefrom'] = self.prepare_date_format(start_d)
+                params['dateto'] = self.prepare_date_format(end_d)
 
-            data_list.append(self._obtain_data_from_website(self._uri_addition(export_type, dates[-1], end_date)))
+                data_list.append(self._obtain_data_from_website(params=params))
+
+            params['datefrom'] = self.prepare_date_format(dates[-1])
+            params['dateto'] = self.prepare_date_format(end_date)
+            data_list.append(self._obtain_data_from_website(params=params))
         else:
-            data_list.append(self._obtain_data_from_website(self._uri_addition(export_type, start_date, end_date)))
-        return assign_date_column(pd.concat(data_list))
+            params['datefrom'] = self.prepare_date_format(start_date)
+            params['dateto'] = self.prepare_date_format(end_date)
+            data_list.append(self._obtain_data_from_website(params=params))
+        return self.assign_date_column(pd.concat(data_list))
 
-    def _obtain_data_from_website(self, url) -> pd.DataFrame:
-        return parse_data(self._api_call(self.base_url + url))
-
-    def _uri_addition(self, export_type, start_date, end_date):
-        return f'exporttype={export_type}&' \
-               f'format=xml&' \
-               f'datefrom={prepare_date_format(start_date)}&' \
-               f'dateto={prepare_date_format(end_date)}&' \
-               f'submit=1'
+    def _obtain_data_from_website(self, params: dict) -> pd.DataFrame:
+        return self.parse_data(self._api_call(params=params))
 
     def query_available_capacity(self, start_date: pd.Timestamp, end_date: pd.Timestamp) -> pd.DataFrame:
         """
