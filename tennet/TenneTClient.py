@@ -40,6 +40,7 @@ class TenneTClient:
                 df['HOUR'] = df.PTU // 4
                 df['MINUTE'] = df.PTU % 4 * 15
                 df.HOUR = df.HOUR.replace(24, 0)
+                df = df.query('HOUR != 25')
                 df['DATETIME'] = pd.to_datetime(
                     df.DATE.astype(str) + ' ' + df.HOUR.astype(str) + ':' + df.MINUTE.astype(str))
                 df.drop(columns=['HOUR', 'MINUTE'])
