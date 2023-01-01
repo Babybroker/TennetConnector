@@ -76,14 +76,14 @@ class TenneTClient:
         if len(dates) > 0:
             for i in range(len(dates)):
                 i -= 1
-                start_d = start_date if i == -1 else dates[i]
+                start_d = start_date if i == -1 else dates[i] + pd.Timedelta(days=1)
                 end_d = dates[0] if i == -1 else dates[i + 1]
                 params['datefrom'] = self.prepare_date_format(start_d)
                 params['dateto'] = self.prepare_date_format(end_d)
 
                 data_list.append(self._obtain_data_from_website(params=params))
 
-            params['datefrom'] = self.prepare_date_format(dates[-1])
+            params['datefrom'] = self.prepare_date_format(dates[-1] + pd.Timedelta(days=1))
             params['dateto'] = self.prepare_date_format(end_date)
             data_list.append(self._obtain_data_from_website(params=params))
         else:
